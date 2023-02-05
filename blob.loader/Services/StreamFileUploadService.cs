@@ -77,36 +77,38 @@ public class StreamFileUploadService : IStreamFileUploadService
             {
                 var fileName = contentDisposition.FileName.Value;
 
-                //var filePath = Path.GetFullPath(Path.Combine(Environment.CurrentDirectory, "UploadedFiles"));
-                //byte[] fileArray;
-                //using (var memoryStream = new MemoryStream())
-                //{
-                //    await section.Body.CopyToAsync(memoryStream);
-                //    fileArray = memoryStream.ToArray();
-                //}
-                //using (var fileStream = System.IO.File.Create(Path.Combine(filePath, contentDisposition.FileName.Value)))
-                //{
-                //    await fileStream.WriteAsync(fileArray);
-                //}
-
                 var blobClient = GetBlobClient(contentDisposition.FileName.Value);
 
-                // Upload data from the local file
-                var uploadResponse = await blobClient.UploadAsync(fileName, true);
-                    
-                if(uploadResponse.GetRawResponse().Status == 201) //Success and Created
-                {
-                    return true;
-                }
+                Azure.Response<BlobContentInfo> uploadResponse;
+
+                ////1. Upload data from the local file
+                //uploadResponse = await blobClient.UploadAsync(fileName, true);
+
+                //2. 
                 //var fullFilePath = Path.Combine(Environment.CurrentDirectory, contentDisposition.FileName.Value);
                 //await blobClient.UploadAsync(fullFilePath, true);
 
+                //3. æ
+                byte[] fileArray;
+                using (var memoryStream = new MemoryStream())
+                {
+                    await section.Body.CopyToAsync(memoryStream);
+                    memoryStream.Position = 0;
+                    uploadResponse = await blobClient.UploadAsync(memoryStream, true);
+                }   
+                
+                
                 //using (var ms = new MemoryStream(fileArray))
                 //{
                 //    Console.WriteLine("Uploading to Blob storage as blob:\n\t {0}\n", blobClient.Uri);
 
-                //    var uploadResponse = await blobClient.UploadAsync(ms, true);
+                //    uploadResponse = await blobClient.UploadAsync(ms, true);
                 //}
+
+                if (uploadResponse.GetRawResponse().Status == 201) //Success and Created
+                {
+                    return true;
+                }
             }
         }
         return true;
